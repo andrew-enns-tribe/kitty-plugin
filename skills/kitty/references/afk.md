@@ -87,28 +87,47 @@ Run these on entry:
 Codex CLI is just another TTY app from kitty's perspective. Same
 commands work, fewer slash-command niceties. Cheat sheet:
 
-- **Send a prompt**: `kitten @ send-text --match id:PANE_ID "do the thing\r"`
-  The `\r` is critical — it presses Enter inside the Codex composer.
+- **Send a prompt** (two steps — Codex's composer treats `\r` as a
+  newline within the input, NOT as submit):
+  ```bash
+  kitten @ send-text --match id:PANE_ID "do the thing"
+  kitten @ send-key  --match id:PANE_ID enter
+  ```
+  Don't append `\r` to the send-text payload — it'll just add a line
+  break to the composer and your prompt will sit unsent. `send-key
+  enter` synthesizes a real Enter keypress, which is the submit.
 - **Read what Codex is doing**:
   `kitten @ get-text --match id:PANE_ID --extent screen`
   Codex shows "Working", "Thinking…", "Generating", or
   "Esc to interrupt" when active. When idle the composer prompt
   ("Send a message" / "Ask for follow-up", and a `▌` cursor) shows.
-- **Stop a running task**: send Esc to the pane:
-  `kitten @ send-text --match id:PANE_ID "\x1b"`
+- **Stop a running task**: send Esc as a real keypress.
+  `kitten @ send-key --match id:PANE_ID escape`
   Don't send Ctrl+C — that exits the Codex CLI process entirely.
 - **Approve an action prompt**: Codex sometimes asks `(y/N)` for
-  shell/file approvals. Send `y\r` (or `n\r`) the same way as any
-  prompt.
+  shell/file approvals. Send the letter, then Enter:
+  ```bash
+  kitten @ send-text --match id:PANE_ID "y"
+  kitten @ send-key  --match id:PANE_ID enter
+  ```
 - **Resume an exited Codex**: if a pane shows the shell prompt with no
-  Codex running, the user (or a crash) exited it. Run
-  `cd PROJECT_DIR && codex` via send-text. There's no `--resume` flag
-  like Claude — Codex restarts cold unless threads are persisted by
-  Codex itself.
+  Codex running, the user (or a crash) exited it. The shell prompt is
+  a normal TTY (not Codex's TUI), so `\r` works normally there:
+  ```bash
+  kitten @ send-text --match id:PANE_ID "cd PROJECT_DIR && codex\r"
+  ```
+  There's no `--resume` flag like Claude — Codex restarts cold unless
+  threads are persisted by Codex itself.
 - **What you can't do**: rename via `/rename`, toggle remote control
   via `/remote-control`, run any Claude slash command. Codex has its
   own `/` commands (`/review`, `/status`, etc) — those work, but they
   go through Codex, not Claude.
+
+**Why `\r` works for Claude but not Codex**: Claude's TUI uses a
+single-line composer where `\r` is the submit. Codex's composer is
+multi-line, so it treats `\r`/`\n` as newlines and reserves the actual
+Enter keypress event for submit. `kitten @ send-key enter` synthesizes
+that keypress event, which `send-text "...\r"` can't.
 
 Status legend in `session_status.py` output for Codex panes:
 - `[codex] active` — Working/Thinking/Generating visible
