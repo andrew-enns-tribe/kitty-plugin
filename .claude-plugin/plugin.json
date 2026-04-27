@@ -1,0 +1,8 @@
+{
+  "name": "kitty",
+  "description": "Kitty terminal power-user setup: 38 themes (incl. all 15 Calvin & Hobbes), splits/grids/stacks, save/restore sessions, AFK command center, natural-language window control. Ships a /install-kitty command that walks the user through prerequisites and config installation.",
+  "author": {
+    "name": "Andrew Enns"
+  },
+  "version": "0.1.0"
+}
