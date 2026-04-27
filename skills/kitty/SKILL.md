@@ -10,11 +10,6 @@ Full control of kitty terminal via `kitten @` remote control and
 AppleScript. The user describes what they want in plain English. Parse
 the intent and use the appropriate commands below.
 
-> **First-time setup:** if `~/.config/kitty/kitty.conf` is missing or
-> remote control isn't enabled (`kitten @ ls` errors), tell the user to
-> run `/install-kitty` first — the install command lays down the config
-> tree and turns on remote control.
-
 Examples of intent:
 - "restore everything" → load from autosave.json
 - "open a workspace in Tribe Hub" → new OS window, cd, launch Claude
@@ -25,12 +20,12 @@ Examples of intent:
 
 ## Companion Resources
 
-- `${CLAUDE_PLUGIN_ROOT}/skills/kitty/scripts/` — reusable helpers (run directly; don't re-inline)
-- `${CLAUDE_PLUGIN_ROOT}/skills/kitty/references/themes.md` — full theme list (Vivid, Dark/Moody, **all 15 Calvin & Hobbes**), custom themes, bg images
-- `${CLAUDE_PLUGIN_ROOT}/skills/kitty/references/afk.md` — AFK command center mode, stuck-session restart runbook
-- `${CLAUDE_PLUGIN_ROOT}/skills/kitty/references/flags.md` — `--match` vs `-m` cheat sheet (critical — wrong one fails)
-- `${CLAUDE_PLUGIN_ROOT}/skills/kitty/references/shortcuts.md` — keyboard shortcuts, built-in kitten tools (diff, ssh, icat, transfer, grep)
-- `${CLAUDE_PLUGIN_ROOT}/skills/kitty/references/advanced.md` — markers, signals, combine, prompt nav, clear modes, broadcast
+- `scripts/` — reusable helpers (run directly; don't re-inline)
+- `references/themes.md` — full theme list (Vivid, Dark/Moody, **all 15 Calvin & Hobbes**), custom themes, bg images
+- `references/afk.md` — AFK command center mode, stuck-session restart runbook
+- `references/flags.md` — `--match` vs `-m` cheat sheet (critical — wrong one fails)
+- `references/shortcuts.md` — keyboard shortcuts, built-in kitten tools (diff, ssh, icat, transfer, grep)
+- `references/advanced.md` — markers, signals, combine, prompt nav, clear modes, broadcast
 
 ## Tab Numbering Convention
 
@@ -164,8 +159,8 @@ all my terminals."
 
 ## Snap / Position via AppleScript
 
-Always get screen dimensions first (external monitor placements can
-have negative Y if they sit above the MacBook):
+Always get screen dimensions first (the external monitor is above the
+MacBook, so monitor coords have negative Y):
 
 ```bash
 osascript -e 'tell application "Finder" to get bounds of window of desktop'
@@ -260,8 +255,8 @@ Parse into a clean summary: window numbers, themes, CWDs, pane counts.
 
 When the user says "afk" or `/kitty afk`, read `references/afk.md` and
 run the startup sequence there. AFK turns this pane into a command
-center that manages every other Claude session (usually controlled
-from the user's phone).
+center that manages every other agent session — Claude or Codex CLI.
+Usually controlled from the user's phone via Claude mobile.
 
 ## Quick Adjustments
 

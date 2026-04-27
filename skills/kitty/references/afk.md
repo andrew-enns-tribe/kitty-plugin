@@ -1,12 +1,18 @@
 # AFK Mode
 
 AFK (Away From Keyboard) mode turns this pane into a command center
-that manages every other Claude session. The user triggers it with
-`/kitty afk` — usually via F12, which launches a new kitty window,
-starts Claude, and auto-sends `/kitty afk` then `/remote-control`. The
-user then controls everything from their phone via Claude mobile.
+that manages every other agent session — Claude or Codex. The user
+triggers it with `/kitty afk` — usually via F12, which launches a new
+kitty window, starts Claude, and auto-sends `/kitty afk` then
+`/remote-control`. The user then controls everything from their phone
+via Claude mobile.
 
-This session IS the command center agent.
+This session IS the command center agent. It drives every other agent
+via `kitten @`. Claude panes get full slash-command control once
+`/remote-control` is enabled. Codex panes have no `/remote-control`
+equivalent, but you can still send any text via `kitten @ send-text`
+and read screen state via `kitten @ get-text` — that's enough for
+"send this prompt", "what's the status", "stop and resend" workflows.
 
 ## Startup Sequence
 
@@ -17,12 +23,14 @@ Run these on entry:
    kitten @ send-text --match id:$KITTY_WINDOW_ID "/rename AFK Command Center\r"
    ```
 
-2. **Enable /remote-control on every other Claude pane, then send Enter
-   to confirm**:
+2. **Discover every agent pane and enable /remote-control on Claude
+   panes**:
    ```bash
    python3 ${CLAUDE_PLUGIN_ROOT}/skills/kitty/scripts/enable_remote_control.py
    ```
-   The script skips the caller's own pane using `KITTY_WINDOW_ID`.
+   The script skips the caller's own pane via `KITTY_WINDOW_ID`. Output
+   tags each pane as `[claude rc-enabled]` or `[codex driveable]` —
+   keep both lists for the report.
 
 3. **Rename each Claude pane with descriptive context**. For each pane
    that got remote-control enabled, read its screen text and CWD, then:
@@ -35,20 +43,27 @@ Run these on entry:
    - `SCC — Unstaff Feature`
    - `Panasonic — Code Review`
 
+   Codex panes can't be renamed via slash command (no `/rename`). Use
+   `kitten @ set-tab-title` directly:
+   ```bash
+   kitten @ set-tab-title --match id:PANE_ID "Panasonic — Codex audit"
+   ```
+
 4. **Sweep status** of every pane:
    ```bash
    python3 ${CLAUDE_PLUGIN_ROOT}/skills/kitty/scripts/session_status.py
    ```
 
-5. **Report to user** with a summary:
+5. **Report to user** with a summary. Tag each entry with the agent
+   type so the user knows what they're addressing:
    ```
    AFK Mode Active. Here's your terminals:
-   - Staffing Command Center: idle, remote control on
-   - Recruiter Assistant (2 panes): thinking (3m 20s), remote control on
-   - Agent2Agent: idle, remote control on
-   - Tribe Hub: idle, remote control on
-   - openclaw (2 panes): idle, remote control on
-   - Panasonic: idle, remote control on
+   - Staffing Command Center [claude]: idle, remote control on
+   - Recruiter Assistant [claude] (2 panes): thinking (3m 20s), remote control on
+   - Agent2Agent [claude]: idle, remote control on
+   - Tribe Hub [claude]: idle, remote control on
+   - openclaw [claude] (2 panes): idle, remote control on
+   - Panasonic [codex]: active, send-text driveable
 
    What do you want me to do?
    ```
@@ -66,6 +81,40 @@ Run these on entry:
   filtering for idle first, then send-text to each
 - "Start remote control everywhere" → re-run
   `enable_remote_control.py`
+
+### Driving Codex panes
+
+Codex CLI is just another TTY app from kitty's perspective. Same
+commands work, fewer slash-command niceties. Cheat sheet:
+
+- **Send a prompt**: `kitten @ send-text --match id:PANE_ID "do the thing\r"`
+  The `\r` is critical — it presses Enter inside the Codex composer.
+- **Read what Codex is doing**:
+  `kitten @ get-text --match id:PANE_ID --extent screen`
+  Codex shows "Working", "Thinking…", "Generating", or
+  "Esc to interrupt" when active. When idle the composer prompt
+  ("Send a message" / "Ask for follow-up", and a `▌` cursor) shows.
+- **Stop a running task**: send Esc to the pane:
+  `kitten @ send-text --match id:PANE_ID "\x1b"`
+  Don't send Ctrl+C — that exits the Codex CLI process entirely.
+- **Approve an action prompt**: Codex sometimes asks `(y/N)` for
+  shell/file approvals. Send `y\r` (or `n\r`) the same way as any
+  prompt.
+- **Resume an exited Codex**: if a pane shows the shell prompt with no
+  Codex running, the user (or a crash) exited it. Run
+  `cd PROJECT_DIR && codex` via send-text. There's no `--resume` flag
+  like Claude — Codex restarts cold unless threads are persisted by
+  Codex itself.
+- **What you can't do**: rename via `/rename`, toggle remote control
+  via `/remote-control`, run any Claude slash command. Codex has its
+  own `/` commands (`/review`, `/status`, etc) — those work, but they
+  go through Codex, not Claude.
+
+Status legend in `session_status.py` output for Codex panes:
+- `[codex] active` — Working/Thinking/Generating visible
+- `[codex] idle (at prompt)` — composer prompt visible, no streaming
+- `[codex] unknown` — neither pattern matched; read screen text
+  directly
 
 ### App/system management (AppleScript + macOS CLI)
 - Open apps: `osascript -e 'tell application "X" to get name of every process whose background only is false'`
