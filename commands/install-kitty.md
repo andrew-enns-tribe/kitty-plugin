@@ -80,12 +80,35 @@ mkdir -p ~/.config/kitty
 cp -R "${CLAUDE_PLUGIN_ROOT}/assets/kitty-config/kitty.conf" ~/.config/kitty/
 cp -R "${CLAUDE_PLUGIN_ROOT}/assets/kitty-config/apply-theme.sh" ~/.config/kitty/
 cp -R "${CLAUDE_PLUGIN_ROOT}/assets/kitty-config/themes" ~/.config/kitty/
-cp -R "${CLAUDE_PLUGIN_ROOT}/assets/kitty-config/images" ~/.config/kitty/
 cp -R "${CLAUDE_PLUGIN_ROOT}/assets/kitty-config/scripts" ~/.config/kitty/
 cp -R "${CLAUDE_PLUGIN_ROOT}/assets/kitty-config/watchers" ~/.config/kitty/
 chmod +x ~/.config/kitty/apply-theme.sh ~/.config/kitty/scripts/*.sh
-mkdir -p ~/.config/kitty/sessions
+mkdir -p ~/.config/kitty/sessions ~/.config/kitty/images
 ```
+
+### Fetch the Calvin & Hobbes background images
+
+Images aren't bundled with the plugin (binary files inflate marketplace
+size). Fetch the 15 jpgs from the public plugin repo. Skip any that
+already exist locally so reinstalls are fast.
+
+```bash
+BASE="https://raw.githubusercontent.com/andrew-enns-tribe/kitty-plugin/main/assets/kitty-config/images"
+for img in ch-autumn-tree ch-calvin-alone ch-calvin-yellow ch-creek \
+           ch-dance-party ch-flying ch-goofing ch-log-crossing \
+           ch-minimal-peek ch-noir ch-peeking ch-sledding \
+           ch-stargazer ch-tree-nap ch-winter-walk; do
+  dest="$HOME/.config/kitty/images/$img.jpg"
+  [ -f "$dest" ] && continue
+  curl -fsSL --retry 2 -o "$dest" "$BASE/$img.jpg" \
+    || echo "warn: failed to fetch $img.jpg (theme will fall back to color-only)"
+done
+```
+
+If the user is offline or behind a firewall that blocks raw.githubusercontent.com,
+the plugin still works — the CH themes will apply colors but skip the
+background image. The watcher logs a warning per missing image and
+moves on.
 
 For `--repair`, only overwrite files in `themes/`, `images/`, `scripts/`,
 `watchers/`, and `apply-theme.sh`. Diff `kitty.conf` and ask the user
